@@ -1,0 +1,160 @@
+{
+  "uid": "turbine-deep-dive",
+  "title": "Turbine Deep Dive — Engineering",
+  "description": "Single turbine analysis: trends, power curve, and alarm history. Like a SCADA engineering workstation.",
+  "tags": ["scada", "turbine", "engineering"],
+  "timezone": "browser",
+  "refresh": "5s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "turbine_id",
+        "type": "query",
+        "label": "Turbine",
+        "datasource": { "type": "influxdb", "uid": "InfluxDB-SCADA" },
+        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"scada\", tag: \"turbine_id\")",
+        "current": { "text": "Turbine01", "value": "Turbine01" },
+        "refresh": 1
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Power Output (kW)",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "influxdb", "uid": "InfluxDB-SCADA" },
+      "targets": [
+        {
+          "query": "from(bucket: \"scada\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetry\")\n  |> filter(fn: (r) => r.turbine_id == \"${turbine_id}\")\n  |> filter(fn: (r) => r.sensor == \"PowerOutput\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "kwatt", "custom": { "fillOpacity": 15 } }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Wind Speed (m/s)",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "influxdb", "uid": "InfluxDB-SCADA" },
+      "targets": [
+        {
+          "query": "from(bucket: \"scada\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetry\")\n  |> filter(fn: (r) => r.turbine_id == \"${turbine_id}\")\n  |> filter(fn: (r) => r.sensor == \"WindSpeed\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "velocityms", "custom": { "fillOpacity": 10 } }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Nacelle Temperature (°C)",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 7 },
+      "datasource": { "type": "influxdb", "uid": "InfluxDB-SCADA" },
+      "targets": [
+        {
+          "query": "from(bucket: \"scada\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetry\")\n  |> filter(fn: (r) => r.turbine_id == \"${turbine_id}\")\n  |> filter(fn: (r) => r.sensor == \"NacelleTemp\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "green" },
+              { "value": 70, "color": "yellow" },
+              { "value": 80, "color": "red" }
+            ]
+          },
+          "custom": { "fillOpacity": 10, "thresholdsStyle": { "mode": "line" } }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Vibration (mm/s RMS)",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 7 },
+      "datasource": { "type": "influxdb", "uid": "InfluxDB-SCADA" },
+      "targets": [
+        {
+          "query": "from(bucket: \"scada\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetry\")\n  |> filter(fn: (r) => r.turbine_id == \"${turbine_id}\")\n  |> filter(fn: (r) => r.sensor == \"Vibration\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "mm/s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "green" },
+              { "value": 6, "color": "yellow" },
+              { "value": 8, "color": "red" }
+            ]
+          },
+          "custom": { "fillOpacity": 10, "thresholdsStyle": { "mode": "line" } }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Rotor RPM & Pitch Angle",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 7 },
+      "datasource": { "type": "influxdb", "uid": "InfluxDB-SCADA" },
+      "targets": [
+        {
+          "query": "from(bucket: \"scada\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetry\")\n  |> filter(fn: (r) => r.turbine_id == \"${turbine_id}\")\n  |> filter(fn: (r) => r.sensor == \"RotorRPM\" or r.sensor == \"PitchAngle\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Power Curve — Wind Speed vs Power Output",
+      "description": "Scatter plot: each dot is one reading. Deviations from the expected curve indicate faults.",
+      "type": "xychart",
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 14 },
+      "datasource": { "type": "influxdb", "uid": "InfluxDB-SCADA" },
+      "targets": [
+        {
+          "query": "wind = from(bucket: \"scada\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetry\")\n  |> filter(fn: (r) => r.turbine_id == \"${turbine_id}\")\n  |> filter(fn: (r) => r.sensor == \"WindSpeed\")\n  |> keep(columns: [\"_time\", \"_value\"])\n  |> rename(columns: {_value: \"wind_speed\"})\n\npower = from(bucket: \"scada\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetry\")\n  |> filter(fn: (r) => r.turbine_id == \"${turbine_id}\")\n  |> filter(fn: (r) => r.sensor == \"PowerOutput\")\n  |> keep(columns: [\"_time\", \"_value\"])\n  |> rename(columns: {_value: \"power_output\"})\n\njoin(tables: {wind: wind, power: power}, on: [\"_time\"])",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "seriesMapping": "manual",
+        "series": [
+          {
+            "x": { "field": "wind_speed" },
+            "y": { "field": "power_output" }
+          }
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "title": "Alert History",
+      "type": "table",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 14 },
+      "datasource": { "type": "influxdb", "uid": "InfluxDB-SCADA" },
+      "targets": [
+        {
+          "query": "from(bucket: \"scada\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"alerts\")\n  |> filter(fn: (r) => r.turbine_id == \"${turbine_id}\")\n  |> sort(columns: [\"_time\"], desc: true)\n  |> limit(n: 50)\n  |> keep(columns: [\"_time\", \"alert_type\", \"severity\", \"_value\"])",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39
+}

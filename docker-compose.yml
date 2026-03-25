@@ -1,0 +1,93 @@
+services:
+  simulator:
+    build: ./simulator
+    container_name: scada-simulator
+    ports:
+      - "4840:4840"
+    environment:
+      - OPCUA_PORT=4840
+      - NUM_TURBINES=10
+      - UPDATE_INTERVAL_MS=1000
+      - FAULT_PROBABILITY=0.005
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost',4840)); s.close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  collector:
+    build: ./collector
+    container_name: scada-collector
+    depends_on:
+      simulator:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+    environment:
+      - OPCUA_ENDPOINT=opc.tcp://simulator:4840
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_TOKEN=scada-dev-token
+      - INFLUXDB_ORG=scada
+      - INFLUXDB_BUCKET=scada
+      - SUBSCRIPTION_INTERVAL_MS=1000
+    restart: unless-stopped
+
+  anomaly_detector:
+    build: ./anomaly_detector
+    container_name: scada-anomaly-detector
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    environment:
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_TOKEN=scada-dev-token
+      - INFLUXDB_ORG=scada
+      - INFLUXDB_BUCKET=scada
+      - CHECK_INTERVAL_S=30
+      - TEMP_THRESHOLD_C=80.0
+      - VIBRATION_THRESHOLD=8.0
+      - POWER_CURVE_DEVIATION_PCT=20.0
+    restart: unless-stopped
+
+  influxdb:
+    image: influxdb:2.7
+    container_name: scada-influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=adminpassword
+      - DOCKER_INFLUXDB_INIT_ORG=scada
+      - DOCKER_INFLUXDB_INIT_BUCKET=scada
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=scada-dev-token
+      - DOCKER_INFLUXDB_INIT_RETENTION=30d
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: scada-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/fleet_overview.json
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/provisioning/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  influxdb_data:
