@@ -8,3 +8,4 @@ venv/
 .vscode/
 *.swp
 *.swo
+.DS_Store
