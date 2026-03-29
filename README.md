@@ -14,6 +14,7 @@ Phase 1 focuses on developing an MVP by creating the monitoring part with a func
 
 1. [x] OPC-UA Server (`simulator/opcua_server.py`)
 2. [ ] Turbine Physics (`simulator/turbine.py`)
+    TODO: Add ±2% random noise for realism
 3. [ ] OPC-UA Client + Subscription (`collector/opcua_client.py`)
 4. [ ] InfluxDB Writer (`collector/influx_writer.py`)
 5. [ ] Grafana Dashboard
@@ -34,10 +35,10 @@ TODO: How to start and use this sim
 
 ## Architecture
 
-```
+```bash
 ┌─────────────────────────────────────────────────────────────┐
-│                    SIMULATED WIND FARM                       │
-│                                                              │
+│                    SIMULATED WIND FARM                      │
+│                                                             │
 │  Turbine 01  Turbine 02  ...  Turbine 10                    │
 │  ┌────────┐  ┌────────┐      ┌────────┐                     │
 │  │wind spd│  │wind spd│      │wind spd│                     │
@@ -48,19 +49,19 @@ TODO: How to start and use this sim
 │  │yaw     │  │yaw     │      │yaw     │                     │
 │  │vibrate │  │vibrate │      │vibrate │                     │
 │  └────────┘  └────────┘      └────────┘                     │
-│                                                              │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │              OPC-UA Server (port 4840)                │    │
-│  │   Farm / Turbine01 / Rotor / Speed                   │    │
-│  │   Farm / Turbine01 / Power / Output                  │    │
-│  │   Farm / Turbine01 / Nacelle / Temperature           │    │
-│  │   ...                                                │    │
-│  └──────────────────────────────────────────────────────┘    │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │              OPC-UA Server (port 4840)               │   │
+│  │   Farm / Turbine01 / Rotor / Speed                   │   │
+│  │   Farm / Turbine01 / Power / Output                  │   │
+│  │   Farm / Turbine01 / Nacelle / Temperature           │   │
+│  │   ...                                                │   │
+│  └──────────────────────────────────────────────────────┘   │
 └──────────────────────┬──────────────────────────────────────┘
                        │ OPC-UA Subscription
                        ▼
 ┌──────────────────────────────────────────────────────────────┐
-│                  DATA COLLECTOR                               │
+│                  DATA COLLECTOR                              │
 │  OPC-UA Client → subscribes to all turbine nodes             │
 │  Writes telemetry to InfluxDB on every data change           │
 │  Handles reconnection if simulator restarts                  │
@@ -68,7 +69,7 @@ TODO: How to start and use this sim
                        │ InfluxDB Line Protocol
                        ▼
 ┌──────────────────────────────────────────────────────────────┐
-│                    INFLUXDB                                   │
+│                    INFLUXDB                                  │
 │  Bucket: scada                                               │
 │  Measurements: telemetry, alerts                             │
 │  Tags: farm, turbine_id, sensor_type                         │
@@ -78,7 +79,7 @@ TODO: How to start and use this sim
             ▼                          ▼
 ┌────────────────────┐   ┌─────────────────────────────────────┐
 │      GRAFANA       │   │        ANOMALY DETECTOR             │
-│                    │   │  Reads telemetry from InfluxDB       │
+│                    │   │  Reads telemetry from InfluxDB      │
 │  Fleet overview    │   │  Checks:                            │
 │  Turbine deep dive │   │   - Power curve deviation           │
 │  Alarm history     │   │   - Temperature threshold           │
@@ -90,14 +91,14 @@ TODO: How to start and use this sim
 ## SCADA Concept Mapping
 
 | Project Component         | Real SCADA Equivalent                          |
-|---------------------------|-------------------------------------------------|
-| Turbine Simulator         | PLCs / RTUs on physical turbines                |
-| OPC-UA Server             | OPC-UA gateway aggregating field device data    |
-| Data Collector            | SCADA data acquisition layer                    |
-| InfluxDB                  | Historian (OSIsoft PI, AVEVA Historian)          |
-| Grafana fleet overview    | HMI / Control room operator screen              |
-| Grafana turbine deep dive | Engineering workstation trend display            |
-| Anomaly Detector          | Predictive maintenance / condition monitoring    |
+|---------------------------|------------------------------------------------|
+| Turbine Simulator         | PLCs / RTUs on physical turbines               |
+| OPC-UA Server             | OPC-UA gateway aggregating field device data   |
+| Data Collector            | SCADA data acquisition layer                   |
+| InfluxDB                  | Historian (OSIsoft PI, AVEVA Historian)        |
+| Grafana fleet overview    | HMI / Control room operator screen             |
+| Grafana turbine deep dive | Engineering workstation trend display          |
+| Anomaly Detector          | Predictive maintenance / condition monitoring  |
 
 ## Quick Start
 
