@@ -24,15 +24,16 @@ ROTOR_DIAMETER_M = 90.0
 ROTOR_AREA_M2 = math.pi * (ROTOR_DIAMETER_M / 2) ** 2
 AIR_DENSITY = 1.225  # kg/m³ at sea level
 RATED_POWER_KW = 3000.0
-CUT_IN_SPEED = 3.5     # m/s — turbine starts generating
-RATED_SPEED = 12.0      # m/s — reaches full power
-CUT_OUT_SPEED = 25.0    # m/s — turbine shuts down for safety
-MAX_CP = 0.45           # Power coefficient (Betz limit is 0.593)
+CUT_IN_SPEED = 3.5  # m/s — turbine starts generating
+RATED_SPEED = 12.0  # m/s — reaches full power
+CUT_OUT_SPEED = 25.0  # m/s — turbine shuts down for safety
+MAX_CP = 0.45  # Power coefficient (Betz limit is 0.593)
 
 
 @dataclass
 class TurbineState:
     """Current sensor readings for one turbine."""
+
     wind_speed_ms: float = 0.0
     rotor_rpm: float = 0.0
     power_output_kw: float = 0.0
