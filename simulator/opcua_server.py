@@ -62,25 +62,26 @@ class ScadaOpcuaServer:
         objects = self.server.nodes.objects
         farm = await objects.add_folder(self.ns_idx, "Farm")
 
-        for sensor_name in SENSOR_NAMES:
+        for turbine in turbines:
             turbine_folder = await farm.add_folder(self.ns_idx, turbines.turbine_id)
-            node = await turbine_folder.add_variable(self.ns_idx, sensor_name, 0.0)
-            await node.set_writeable(False)
-            self.turbine_nodes[turbines.turbine_id][sensor_name] = node
-
+            self.turbine_nodes[turbine.turbine_id] = {}
+            for sensor_name in SENSOR_NAMES:
+                node = await turbine_folder.add_variable(self.ns_idx, sensor_name, 0.0)
+                await node.set_writable(False)
+                self.turbine_nodes[turbines.turbine_id][sensor_name] = node
         pass
 
     async def update_turbine_nodes(self, turbine: WindTurbine) -> None:
         # Push current turbine state to OPC-UA node values.
 
         nodes = self.turbine_nodes[turbine.turbine_id]
-        await nodes[SENSOR_NAMES[0]].write_value(turbine.wind_speed_ms)
-        await nodes[SENSOR_NAMES[1]].write_value(turbine.rotor_rpm)
-        await nodes[SENSOR_NAMES[2]].write_value(turbine.power_output_kw)
-        await nodes[SENSOR_NAMES[3]].write_value(turbine.nacelle_temp_c)
-        await nodes[SENSOR_NAMES[4]].write_value(turbine.pitch_angle_deg)
-        await nodes[SENSOR_NAMES[5]].write_value(turbine.yaw_angle_deg)
-        await nodes[SENSOR_NAMES[6]].write_value(turbine.vibration_mm_s)
+        await nodes[SENSOR_NAMES[0]].write_value(turbine.state.wind_speed_ms)
+        await nodes[SENSOR_NAMES[1]].write_value(turbine.state.rotor_rpm)
+        await nodes[SENSOR_NAMES[2]].write_value(turbine.state.power_output_kw)
+        await nodes[SENSOR_NAMES[3]].write_value(turbine.state.nacelle_temp_c)
+        await nodes[SENSOR_NAMES[4]].write_value(turbine.state.pitch_angle_deg)
+        await nodes[SENSOR_NAMES[5]].write_value(turbine.state.yaw_angle_deg)
+        await nodes[SENSOR_NAMES[6]].write_value(turbine.state.vibration_mm_s)
         pass
 
     async def start(self) -> None:

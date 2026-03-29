@@ -48,6 +48,7 @@ class TurbineState:
     """Current sensor readings for one turbine."""
 
     wind_speed_ms: float = 0.0
+    wind_direction: float = 0.0
     rotor_rpm: float = 0.0
     power_output_kw: float = 0.0
     nacelle_temp_c: float = 25.0
@@ -75,7 +76,7 @@ class WindTurbine:
         """
 
         # Store wind speed
-        self.state.wind_speed.ms = wind_speed
+        self.state.wind_speed_ms = wind_speed
 
         """
         Calculate power_output_kw using the power curve:
@@ -92,14 +93,14 @@ class WindTurbine:
         elif CUT_IN_SPEED <= wind_speed <= RATED_SPEED:
             wind_power = 0.5 * AIR_DENSITY * ROTOR_AREA_M2 * pow(wind_speed, 3) * MAX_CP
 
-            # Can it be above RATED_POWER_KW? Should be clamp it in here too?
-            self.state.power_output_kw = wind_power
+            # clamped
+            self.state.power_output_kw = min(wind_power, RATED_POWER_KW)
 
             # add noise
             self.state.power_output_kw += random.uniform(
                 (self.state.power_output_kw * -0.02), self.state.power_output_kw * 0.02
             )
-        elif RATED_SPEED < wind_power < CUT_OUT_SPEED:
+        elif RATED_SPEED < wind_speed < CUT_OUT_SPEED:
             self.state.power_output_kw = RATED_POWER_KW
         elif CUT_OUT_SPEED < wind_speed:
             # Safety shutdown
@@ -162,7 +163,7 @@ class WindTurbine:
 
         # Slowly track toward wind direction
         # get shortest signed angle difference (wrap around 0deg / 360deg)
-        yaw_move = (self.wind_direction - self.state.yaw_angle_deg + 180) & 360 - 180
+        yaw_move = (self.wind_direction - self.state.yaw_angle_deg + 180) % 360 - 180
 
         if abs(yaw_move) > YAW_RATE:
             # Move toward wind direction at limited speed
@@ -187,18 +188,23 @@ class WindTurbine:
 
         temp_base = ambient_temp + 15
         temp_power = temp_base + (self.state.power_output_kw * TEMP_RISE_PER_KW)
+        temp_cooling_rate = COOLING_RATE
+
+        # fault_nacelle_cooling, simulates cooling failure
+        if self.fault_nacelle_cooling:
+            temp_cooling_rate *= 0.1
 
         # Smooth transition (exponential moving avg)
-        self.state.nacelle_temp_c += COOLING_RATE * (
+        self.state.nacelle_temp_c += temp_cooling_rate * (
             temp_power - self.state.nacelle_temp_c
         )
 
         # add slight noise
         self.state.nacelle_temp_c += random.uniform(-0.3, 0.3)
 
-        # fault_nacelle_cooling, simulates cooling failure
-        if self.fault_nacelle_cooling:
-            self.state.nacelle_temp_c += random.uniform(5.0, 10.0)
+        # fault_bearing_overheat
+        if self.fault_bearing_overheat:
+            self.state.nacelle_temp_c += random.uniform(20.0, 40.0)
 
         # Clamp
         self.state.nacelle_temp_c = min(self.state.nacelle_temp_c, MAX_NACELLE_TEMP)
@@ -232,6 +238,10 @@ class WindTurbine:
         # fault_high_vibration
         if self.fault_high_vibration:
             self.state.vibration_mm_s += random.uniform(3.0, 6.0)
+
+        # fault_bearing_overheat
+        if self.fault_bearing_overheat:
+            self.state.vibration_mm_s *= random.uniform(3.0, 5.0)
 
         # floor
         self.state.vibration_mm_s = max(0.0, self.state.vibration_mm_s)
