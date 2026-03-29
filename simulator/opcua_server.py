@@ -63,12 +63,12 @@ class ScadaOpcuaServer:
         farm = await objects.add_folder(self.ns_idx, "Farm")
 
         for turbine in turbines:
-            turbine_folder = await farm.add_folder(self.ns_idx, turbines.turbine_id)
+            turbine_folder = await farm.add_folder(self.ns_idx, turbine.turbine_id)
             self.turbine_nodes[turbine.turbine_id] = {}
             for sensor_name in SENSOR_NAMES:
                 node = await turbine_folder.add_variable(self.ns_idx, sensor_name, 0.0)
                 await node.set_writable(False)
-                self.turbine_nodes[turbines.turbine_id][sensor_name] = node
+                self.turbine_nodes[turbine.turbine_id][sensor_name] = node
         pass
 
     async def update_turbine_nodes(self, turbine: WindTurbine) -> None:

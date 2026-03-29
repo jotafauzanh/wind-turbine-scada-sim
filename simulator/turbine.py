@@ -158,12 +158,14 @@ class WindTurbine:
         """
 
         # Simulate wind direction with a random walk
-        self.wind_direction += random.uniform(-2.0, 2.0)  # slow drift
-        self.wind_direction %= 360  # keep within 360 deg
+        self.state.wind_direction += random.uniform(-2.0, 2.0)  # slow drift
+        self.state.wind_direction %= 360  # keep within 360 deg
 
         # Slowly track toward wind direction
         # get shortest signed angle difference (wrap around 0deg / 360deg)
-        yaw_move = (self.wind_direction - self.state.yaw_angle_deg + 180) % 360 - 180
+        yaw_move = (
+            self.state.wind_direction - self.state.yaw_angle_deg + 180
+        ) % 360 - 180
 
         if abs(yaw_move) > YAW_RATE:
             # Move toward wind direction at limited speed
