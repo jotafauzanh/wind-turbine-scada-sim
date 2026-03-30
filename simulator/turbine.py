@@ -171,7 +171,7 @@ class WindTurbine:
             # Move toward wind direction at limited speed
             self.state.yaw_angle_deg += YAW_RATE * (1 if yaw_move > 0 else -1)
         else:
-            self.state.yaw_angle_deg = self.wind_direction
+            self.state.yaw_angle_deg = self.state.wind_direction
 
         self.state.yaw_angle_deg %= 360
 
