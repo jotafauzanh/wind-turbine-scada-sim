@@ -24,7 +24,7 @@ Phase 1 focuses on developing an MVP by creating the monitoring part with a func
 Phase 2 focuses on refining the simulations by adding anomalies to the data and creating detectors for it.
 
 1. [ ] Power Curve Detector (`anomaly_detector/detectors.py`)
-2. [ ] Weather Simulator (`simulator/weather.py`)
+2. [x] Weather Simulator (`simulator/weather.py`)
 3. [ ] Fault Injection (`simulator/faults.py`)
 4. [ ] InfluxDB Reader + remaining detectors (`anomaly_detector/..`)
 

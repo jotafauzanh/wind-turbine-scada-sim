@@ -16,10 +16,10 @@ import random
 class WeatherSimulator:
     def __init__(
         self,
-        mean_wind_speed: float = 9.0,      # m/s — typical North Sea average
-        wind_volatility: float = 0.5,       # How much wind changes per step
+        mean_wind_speed: float = 9.0,  # m/s — typical North Sea average
+        wind_volatility: float = 0.5,  # How much wind changes per step
         mean_reversion_rate: float = 0.02,  # How strongly wind returns to mean
-        base_ambient_temp: float = 12.0,    # °C — typical Danish annual average
+        base_ambient_temp: float = 12.0,  # °C — typical Danish annual average
     ):
         self.mean_wind_speed = mean_wind_speed
         self.wind_volatility = wind_volatility
@@ -33,22 +33,42 @@ class WeatherSimulator:
     def step(self) -> None:
         """
         Advance weather by one tick.
+        """
 
-        TODO: Implement:
+        """
         1. Wind speed — Ornstein-Uhlenbeck process:
-           drift = mean_reversion_rate * (mean_wind_speed - current_wind_speed)
-           noise = wind_volatility * random.gauss(0, 1)
-           current_wind_speed += drift + noise
-           Clamp to [0, 35] m/s
+        drift = mean_reversion_rate * (mean_wind_speed - current_wind_speed)
+        noise = wind_volatility * random.gauss(0, 1)
+        current_wind_speed += drift + noise
+        Clamp to [0, 35] m/s
+        """
+        drift = self.mean_reversion_rate * (
+            self.mean_wind_speed - self.current_wind_speed
+        )
+        noise = self.wind_volatility * random.gauss(0, 1)
+        self.current_wind_speed += drift + noise
 
+        if self.current_wind_speed < 0.0:
+            self.current_wind_speed = 0.0
+        elif self.current_wind_speed > 35.0:
+            self.current_wind_speed = 35.0
+
+        """
         2. Ambient temperature — slow sinusoidal variation:
-           Add a slow sine wave (period ~3600 ticks ≈ 1 hour at 1s ticks)
-           to simulate day/night temperature swing of ±5°C
-           Plus small random noise ±0.2°C
+        Add a slow sine wave (period ~3600 ticks ≈ 1 hour at 1s ticks)
+        to simulate day/night temperature swing of ±5°C
+        Plus small random noise ±0.2°C
+        """
+        sine = math.sin(math.radians((self.tick / 10) % 360))
+        ambient_offset = sine * 5
+        ambient_offset = ambient_offset + (random.uniform(-0.2, 0.2))
+        self.current_ambient_temp = self.base_ambient_temp + ambient_offset
 
+        """
         3. Increment self.tick
         """
-        # TODO: implement weather evolution
+        self.tick += 1
+
         pass
 
     def get_wind_speed(self) -> float:
