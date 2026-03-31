@@ -11,6 +11,7 @@ telemetry from field devices into the central database.
 
 import asyncio
 import logging
+import datetime
 from typing import Callable
 from asyncua import Client, Node
 from asyncua.common.subscription import SubHandler
@@ -36,15 +37,31 @@ class DataChangeHandler(SubHandler):
 
     def datachange_notification(self, node: Node, val, data) -> None:
         """
-        TODO: Implement:
         1. Get node_id string: node_id = node.nodeid.to_string()
         2. Look up (turbine_id, sensor_name) from self.node_map
         3. Get timestamp from data.monitored_item.Value.SourceTimestamp
-           (fall back to datetime.utcnow() if None)
+            (fall back to datetime.utcnow() if None)
         4. Call self.callback(turbine_id, sensor_name, float(val), timestamp)
         5. Handle KeyError gracefully if node_id not in map
         """
-        # TODO: implement data change handler
+
+        try:
+            node_id = node.nodeid.to_string()
+        except:
+            logger.warning(
+                f"Fail to datachange_notifiation "
+                f"node={node}, val={val}, "
+                f"data={data}%"
+            )
+            pass
+
+        turbine_id, sensor_name = self.node_map[node_id]
+        timestamp = data.monitored_item.Value.SourceTimestam
+        if not timestamp:
+            timestamp = datetime.utcnow()
+
+        self.callback(turbine_id, sensor_name, float(val), timestamp)
+
         pass
 
 
@@ -77,6 +94,7 @@ class OpcuaSubscriber:
         - Log each retry attempt
         """
         # TODO: implement connection and subscription
+
         pass
 
     async def disconnect(self) -> None:

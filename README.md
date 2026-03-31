@@ -32,6 +32,11 @@ Phase 2 focuses on refining the simulations by adding anomalies to the data and 
 
 TODO: How to start and use this sim
 
+## Personal learning checklist
+
+- [ ] Actually learn OPC-UA
+- [ ] Actually Read up turbine physics
+
 ## Architecture
 
 ```bash
