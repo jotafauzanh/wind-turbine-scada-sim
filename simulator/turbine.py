@@ -18,7 +18,6 @@ import math
 import random
 from dataclasses import dataclass, field
 
-
 # Turbine specs (loosely based on a Vestas V90-3.0 MW)
 ROTOR_DIAMETER_M = 90.0
 ROTOR_AREA_M2 = math.pi * (ROTOR_DIAMETER_M / 2) ** 2
@@ -102,7 +101,7 @@ class WindTurbine:
             )
         elif RATED_SPEED < wind_speed < CUT_OUT_SPEED:
             self.state.power_output_kw = RATED_POWER_KW
-        elif CUT_OUT_SPEED < wind_speed:
+        elif wind_speed > CUT_OUT_SPEED:
             # Safety shutdown
             self.state.power_output_kw = 0
 
@@ -147,7 +146,7 @@ class WindTurbine:
             # range of 0.0 to 25.0 between RATED_SPEED and CUT_OUT_SPEED
             pole = (wind_speed - RATED_SPEED) / (CUT_OUT_SPEED - RATED_SPEED)
             self.state.pitch_angle_deg = pole * 25
-        elif CUT_OUT_SPEED < wind_speed:
+        elif wind_speed > CUT_OUT_SPEED:
             # TODO: What do? I will just set 25, for now
             self.state.pitch_angle_deg = 25.0
 
@@ -163,9 +162,7 @@ class WindTurbine:
 
         # Slowly track toward wind direction
         # get shortest signed angle difference (wrap around 0deg / 360deg)
-        yaw_move = (
-            self.state.wind_direction - self.state.yaw_angle_deg + 180
-        ) % 360 - 180
+        yaw_move = (self.state.wind_direction - self.state.yaw_angle_deg + 180) % 360 - 180
 
         if abs(yaw_move) > YAW_RATE:
             # Move toward wind direction at limited speed
@@ -197,9 +194,7 @@ class WindTurbine:
             temp_cooling_rate *= 0.1
 
         # Smooth transition (exponential moving avg)
-        self.state.nacelle_temp_c += temp_cooling_rate * (
-            temp_power - self.state.nacelle_temp_c
-        )
+        self.state.nacelle_temp_c += temp_cooling_rate * (temp_power - self.state.nacelle_temp_c)
 
         # add slight noise
         self.state.nacelle_temp_c += random.uniform(-0.3, 0.3)
@@ -230,9 +225,7 @@ class WindTurbine:
             vibration *= 1.3
 
         # smooth transition
-        self.state.vibration_mm_s += VIBRATION_SMOOTHING * (
-            vibration - self.state.vibration_mm_s
-        )
+        self.state.vibration_mm_s += VIBRATION_SMOOTHING * (vibration - self.state.vibration_mm_s)
 
         # Add noise
         self.state.vibration_mm_s += random.uniform(-0.2, 0.2)

@@ -10,10 +10,10 @@ telemetry from field devices into the central database.
 """
 
 import asyncio
-import logging
 import datetime
-import time
-from typing import Callable
+import logging
+from collections.abc import Callable
+
 from asyncua import Client, Node
 from asyncua.common.subscription import SubHandler
 
@@ -49,15 +49,11 @@ class DataChangeHandler(SubHandler):
         try:
             node_id = node.nodeid.to_string()
         except:
-            logger.warning(
-                f"Fail to datachange_notifiation "
-                f"node={node}, val={val}, "
-                f"data={data}%"
-            )
+            logger.warning(f"Fail to datachange_notifiation node={node}, val={val}, data={data}%")
             pass
 
         turbine_id, sensor_name = self.node_map[node_id]
-        timestamp = data.monitored_item.Value.SourceTimestam
+        timestamp = data.monitored_item.Value.SourceTimestamp
         if not timestamp:
             timestamp = datetime.utcnow()
 
@@ -118,7 +114,10 @@ class OpcuaSubscriber:
         turbine_folders = await farm.get_children()
 
         # Init node_map
-        node_map = []
+        node_map = {}
+
+        # Init collect sensor nodes
+        all_sensor_nodes = []
 
         # For each turbine folder, get sensor nodes
         for turbine_folder in turbine_folders:
@@ -128,21 +127,19 @@ class OpcuaSubscriber:
                 sensor_name = (await sensor_node.read_browse_name()).Name
                 node_id_str = sensor_node.nodeid.to_string()
                 node_map[node_id_str] = (turbine_name, sensor_name)
+                all_sensor_nodes.append(sensor_node)
 
         # Create subscription
         handler = DataChangeHandler(node_map, self.on_data_change)
-        self.subscription = await self.client.create_subscription(
-            self.interval_ms, handler
-        )
+        self.subscription = await self.client.create_subscription(self.interval_ms, handler)
 
         retry = 0
         try:
-            await self.subscription.subscribe_data_change(turbine_folders)
+            await self.subscription.subscribe_data_change(all_sensor_nodes)
         except:
-            logging.warning(
-                f"Subscribing failed. Attempt #{retry}. Retrying in 5 seconds..."
-            )
-            time.sleep(5)
+            logging.warning(f"Subscribing failed. Attempt #{retry}. Retrying in 5 seconds...")
+            await asyncio.sleep(5)
+            pass
 
         logging.info(f"Subscription success, connected to {len(node_map)} nodes")
         pass

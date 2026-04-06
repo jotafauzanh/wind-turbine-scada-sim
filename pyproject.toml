@@ -1,0 +1,45 @@
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+# Enable an aggressive ruleset:
+# E/W = pycodestyle, F = pyflakes, I = isort, N = pep8-naming,
+# UP = pyupgrade, B = flake8-bugbear, C4 = flake8-comprehensions,
+# SIM = flake8-simplify, RUF = ruff-specific, ANN = type annotations,
+# PTH = use pathlib, ERA = no commented-out code, PL = pylint
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "N",        # pep8-naming
+    "UP",       # pyupgrade
+    "B",        # flake8-bugbear
+    "C4",       # flake8-comprehensions
+    "SIM",      # flake8-simplify
+    "RUF",      # ruff-specific rules
+    "ANN",      # type annotations required
+    "PTH",      # use pathlib over os.path
+    "PL",       # pylint
+    "ERA",      # no commented-out code
+    "PERF",     # performance anti-patterns
+    "TRY",      # exception handling best practices
+]
+ignore = [
+    "TRY003",   # allow long exception messages
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Relax annotation requirements in scripts/entrypoints
+"**/main.py" = ["ANN"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+disallow_any_generics = true
