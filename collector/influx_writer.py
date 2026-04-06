@@ -14,6 +14,7 @@ OSIsoft PI or AVEVA Historian.
 
 import logging
 from datetime import datetime
+
 from influxdb_client import InfluxDBClient, Point, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS
 
@@ -37,22 +38,37 @@ class InfluxWriter:
         """
         Write a single telemetry data point to InfluxDB.
 
-        TODO: Implement:
         1. Create a Point:
-           point = (
-               Point("telemetry")
-               .tag("farm", "WindFarm01")
-               .tag("turbine_id", turbine_id)
-               .tag("sensor", sensor_name)
-               .field("value", value)
-               .time(timestamp, WritePrecision.MS)
-           )
+            point = (
+                Point("telemetry")
+                .tag("farm", "WindFarm01")
+                .tag("turbine_id", turbine_id)
+                .tag("sensor", sensor_name)
+                .field("value", value)
+                .time(timestamp, WritePrecision.MS)
+            )
         2. Write it:
-           self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+            self.write_api.write(bucket=self.bucket, org=self.org, record=point)
         3. Handle write errors gracefully — log but don't crash
-           (a real SCADA system must keep collecting even if the historian hiccups)
+            (a real SCADA system must keep collecting even if the historian hiccups)
         """
-        # TODO: implement write
+        point = (
+            Point("telemetry")
+            .tag("farm", "WindFarm01")  # hardcode for now, as theres only one Wind Farm.
+            .tag("turbine_id", turbine_id)
+            .tag("sensor", sensor_name)
+            .field("value", value)
+            .time(timestamp, WritePrecision.MS)
+        )
+
+        try:
+            self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+        except Exception as e:
+            logger.exception(
+                f"[influx_writer][write_telemetry] Error: {e}, farm: WindFarm01, turbine_id: {turbine_id}, sensor: {sensor_name}, value: {value}, timestamp: {timestamp}"
+            )
+            pass
+
         pass
 
     def write_alert(
@@ -67,20 +83,36 @@ class InfluxWriter:
         Write an alert/alarm data point to InfluxDB.
         Used by the anomaly detector to record detected issues.
 
-        TODO: Implement:
         1. Create a Point:
-           point = (
-               Point("alerts")
-               .tag("farm", "WindFarm01")
-               .tag("turbine_id", turbine_id)
-               .tag("alert_type", alert_type)
-               .tag("severity", severity)
-               .field("message", message)
-               .time(timestamp or datetime.utcnow(), WritePrecision.MS)
-           )
+            point = (
+                Point("alerts")
+                .tag("farm", "WindFarm01")
+                .tag("turbine_id", turbine_id)
+                .tag("alert_type", alert_type)
+                .tag("severity", severity)
+                .field("message", message)
+                .time(timestamp or datetime.utcnow(), WritePrecision.MS)
+            )
         2. Write it with error handling
         """
-        # TODO: implement alert write
+        point = (
+            Point("telemetry")
+            .tag("farm", "WindFarm01")  # hardcode for now, as theres only one Wind Farm.
+            .tag("turbine_id", turbine_id)
+            .tag("alert_type", alert_type)
+            .tag("severity", severity)
+            .field("message", message)
+            .time(timestamp, WritePrecision.MS)
+        )
+
+        try:
+            self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+        except Exception as e:
+            logger.exception(
+                f"[influx_writer][write_alert] Error: {e}, farm: WindFarm01, turbine_id: {turbine_id}, alert_type: {alert_type}, severity: {severity}, message: {message}, timestamp: {timestamp}"
+            )
+            pass
+
         pass
 
     def close(self) -> None:
