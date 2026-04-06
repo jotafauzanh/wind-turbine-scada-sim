@@ -12,6 +12,7 @@ telemetry from field devices into the central database.
 import asyncio
 import logging
 import datetime
+import time
 from typing import Callable
 from asyncua import Client, Node
 from asyncua.common.subscription import SubHandler
@@ -81,20 +82,69 @@ class OpcuaSubscriber:
         3. For each turbine folder, browse its children (sensor nodes)
         4. Build a node_map: {node.nodeid.to_string(): (turbine_id, sensor_name)}
         5. Create a subscription:
-           handler = DataChangeHandler(node_map, self.on_data_change)
-           self.subscription = await self.client.create_subscription(
-               self.interval_ms, handler
-           )
+            handler = DataChangeHandler(node_map, self.on_data_change)
+            self.subscription = await self.client.create_subscription(
+                self.interval_ms, handler
+            )
         6. Subscribe to all discovered nodes:
-           await self.subscription.subscribe_data_change(all_nodes)
+            await self.subscription.subscribe_data_change(all_nodes)
         7. Log how many nodes were subscribed
 
         Handle connection failures with retry logic:
         - If connection fails, wait 5 seconds and retry
         - Log each retry attempt
         """
-        # TODO: implement connection and subscription
 
+        """
+        Objects/
+        └── Farm/           ← added under objects node, namespace idx = ns_idx (2)
+            ├── Turbine01/
+            │   ├── WindSpeed
+            │   └── ...
+            └── Turbine10/
+
+        """
+        # Connect
+        await self.client.connect()
+
+        # Get namespace index (uri from opcua_server.py)
+        ns_idx = await self.client.get_namespace_index("urn:windfarm:scada:sim")
+
+        # Browse the "Farm" folder
+        objects = self.client.get_objects_node()
+        farm = await objects.get_child([f"{ns_idx}:Farm"])
+
+        # Browse turbine folders
+        turbine_folders = await farm.get_children()
+
+        # Init node_map
+        node_map = []
+
+        # For each turbine folder, get sensor nodes
+        for turbine_folder in turbine_folders:
+            turbine_name = (await turbine_folder.read_browse_name()).Name
+            sensor_nodes = await turbine_folder.get_children()
+            for sensor_node in sensor_nodes:
+                sensor_name = (await sensor_node.read_browse_name()).Name
+                node_id_str = sensor_node.nodeid.to_string()
+                node_map[node_id_str] = (turbine_name, sensor_name)
+
+        # Create subscription
+        handler = DataChangeHandler(node_map, self.on_data_change)
+        self.subscription = await self.client.create_subscription(
+            self.interval_ms, handler
+        )
+
+        retry = 0
+        try:
+            await self.subscription.subscribe_data_change(turbine_folders)
+        except:
+            logging.warning(
+                f"Subscribing failed. Attempt #{retry}. Retrying in 5 seconds..."
+            )
+            time.sleep(5)
+
+        logging.info(f"Subscription success, connected to {len(node_map)} nodes")
         pass
 
     async def disconnect(self) -> None:
