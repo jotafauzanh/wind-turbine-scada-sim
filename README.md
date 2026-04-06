@@ -31,6 +31,12 @@ Phase 2 focuses on refining the simulations by adding anomalies to the data and 
 ## How to use
 
 TODO: How to start and use this sim
+- `docker-compose up --build`
+- open `localhost:3000`
+
+### WIP
+<img width="1647" height="940" alt="image" src="https://github.com/user-attachments/assets/61886f02-1591-411b-9255-3e942e2f63e3" />
+
 
 ## Personal learning checklist
 
