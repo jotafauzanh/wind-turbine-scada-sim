@@ -96,7 +96,7 @@ class InfluxWriter:
         2. Write it with error handling
         """
         point = (
-            Point("telemetry")
+            Point("alerts")
             .tag("farm", "WindFarm01")  # hardcode for now, as theres only one Wind Farm.
             .tag("turbine_id", turbine_id)
             .tag("alert_type", alert_type)
