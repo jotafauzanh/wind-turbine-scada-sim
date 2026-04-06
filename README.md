@@ -14,7 +14,7 @@ Phase 1 focuses on developing an MVP by creating the monitoring part with a func
 
 1. [x] OPC-UA Server (`simulator/opcua_server.py`)
 2. [x] Turbine Physics (`simulator/turbine.py`)
-3. [ ] OPC-UA Client + Subscription (`collector/opcua_client.py`)
+3. [x] OPC-UA Client + Subscription (`collector/opcua_client.py`)
 4. [ ] InfluxDB Writer (`collector/influx_writer.py`)
 5. [ ] Grafana Dashboard
 6. [ ] Docker compose to run all of it in single command
