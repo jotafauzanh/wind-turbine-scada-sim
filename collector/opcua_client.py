@@ -15,7 +15,7 @@ import logging
 from collections.abc import Callable
 
 from asyncua import Client, Node
-from asyncua.common.subscription import SubHandler
+from asyncua.common.subscription import DataChangeNotif, SubHandler
 
 logger = logging.getLogger("opcua_client")
 
@@ -36,7 +36,7 @@ class DataChangeHandler(SubHandler):
         self.node_map = node_map
         self.callback = callback
 
-    def datachange_notification(self, node: Node, val, data) -> None:
+    def datachange_notification(self, node: Node, val: float, data: DataChangeNotif) -> None:
         """
         1. Get node_id string: node_id = node.nodeid.to_string()
         2. Look up (turbine_id, sensor_name) from self.node_map
@@ -48,16 +48,17 @@ class DataChangeHandler(SubHandler):
 
         try:
             node_id = node.nodeid.to_string()
-        except:
-            logger.warning(f"Fail to datachange_notifiation node={node}, val={val}, data={data}%")
+            turbine_id, sensor_name = self.node_map[node_id]
+            timestamp = data.monitored_item.Value.SourceTimestamp
+            if not timestamp:
+                timestamp = datetime.datetime.utcnow()
+
+            self.callback(turbine_id, sensor_name, float(val), timestamp)
+        except Exception as e:
+            logger.warning(
+                f"Fail to datachange_notifiation node={node}, val={val}, data={data}%, error={e}"
+            )
             pass
-
-        turbine_id, sensor_name = self.node_map[node_id]
-        timestamp = data.monitored_item.Value.SourceTimestamp
-        if not timestamp:
-            timestamp = datetime.utcnow()
-
-        self.callback(turbine_id, sensor_name, float(val), timestamp)
 
         pass
 
@@ -133,13 +134,18 @@ class OpcuaSubscriber:
         handler = DataChangeHandler(node_map, self.on_data_change)
         self.subscription = await self.client.create_subscription(self.interval_ms, handler)
 
-        retry = 0
-        try:
-            await self.subscription.subscribe_data_change(all_sensor_nodes)
-        except:
-            logging.warning(f"Subscribing failed. Attempt #{retry}. Retrying in 5 seconds...")
-            await asyncio.sleep(5)
-            pass
+        max_retries = 5
+        for retry in range(1, max_retries + 1):
+            try:
+                await self.subscription.subscribe_data_change(all_sensor_nodes)
+                break
+            except Exception as e:
+                logging.warning(
+                    f"Subscribing failed. Attempt #{retry}. Retrying in 5 seconds... ({e})"
+                )
+                if retry == max_retries:
+                    raise
+                await asyncio.sleep(5)
 
         logging.info(f"Subscription success, connected to {len(node_map)} nodes")
         pass
