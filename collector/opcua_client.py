@@ -15,12 +15,12 @@ import logging
 from collections.abc import Callable
 
 from asyncua import Client, Node
-from asyncua.common.subscription import DataChangeNotif, SubHandler
+from asyncua.common.subscription import DataChangeNotif, DataChangeNotificationHandler
 
 logger = logging.getLogger("opcua_client")
 
 
-class DataChangeHandler(SubHandler):
+class DataChangeHandler(DataChangeNotificationHandler):
     """
     Called by opcua-asyncio whenever a subscribed node value changes.
     Parses the node path to extract turbine_id and sensor_name,

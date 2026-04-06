@@ -120,7 +120,7 @@ Once running:
 ## Tech Stack
 
 - **Python 3.12** — simulator, collector, anomaly detector
-- **opcua-asyncio** — OPC-UA server and client
+- **opcua-asyncio** — OPC-UA server and client (https://opcua-asyncio.readthedocs.io/en/latest/index.html)
 - **InfluxDB 2.x** — time-series storage
 - **Grafana** — operational dashboards
 - **Docker Compose** — single-command deployment
